@@ -31,7 +31,7 @@ Google Cloud Project with Calendar API enabled
 git clone https://github.com/Ayala-b/AppointmentChatBot.git
 cd appointment-chatbot
 
-2. Add Google Credentials- a file is name: credentials.json with the details I sent you Place it inside the backend/ directory
+2. Add Google Credentials- a file name is: credentials.json which I sent you Place it inside the backend/ directory
 
 🚀 Running with Docker
 
