@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request as GoogleRequest
+from doctor import doctor_router
+import auth
 import httpx
 
 app = FastAPI()
@@ -14,6 +16,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth.router)
+app.include_router(doctor_router)
 
 SERVICE_ACCOUNT_FILE = 'credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']

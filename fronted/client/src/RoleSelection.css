@@ -1,0 +1,9 @@
+.role-selection-container {
+  text-align: center;
+  margin-top: 100px;
+}
+.role-button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 18px;
+}

@@ -18,6 +18,7 @@ function formatDateTime(datetimeStr) {
 function Chat() {
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [email, setEmail] = useState('');
   const [messages, setMessages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,6 +30,11 @@ function Chat() {
 
     if (!start || !end) {
       toast.error("Please select both start and end time.");
+      return;
+    }
+
+    if (!email || !email.includes('@')) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
@@ -63,58 +69,47 @@ function Chat() {
       if (!res.data.available) {
         const reason = res.data.reason;
 
+        let errorMsg = '';
         if (reason === 'Outside working hours') {
-          setMessages(prev => [...prev, {
-            text: 'The clinic is closed during these hours. Please select a different time.',
-            sender: 'bot'
-          }]);
-          toast.error("Clinic is closed during these hours.");
-
+          errorMsg = 'The clinic is closed during these hours(Open on Sunday-Thursday:9:00-17:00,Fraiday:9:00-13:00). Please select a different time.';
         } else if (reason === 'Appointment must be between 1 and 30 minutes long') {
-          setMessages(prev => [...prev, {
-            text: 'Appointments must be between 1 and 30 minutes long.',
-            sender: 'bot'
-          }]);
-          toast.error("Appointment must be 1–30 minutes long.");
-
+          errorMsg = 'Appointments must be between 1 and 30 minutes long.';
         } else if (reason === 'Cannot book in the past') {
-          setMessages(prev => [...prev, {
-            text: 'Cannot book appointments in the past.',
-            sender: 'bot'
-          }]);
-          toast.error("Invalid time: Cannot book in the past.");
-
+          errorMsg = 'Cannot book appointments in the past.';
         } else if (reason === 'Time slot already booked') {
-          setMessages(prev => [...prev, {
-            text: 'This time slot is already taken. Please choose another one.',
-            sender: 'bot'
-          }]);
-          toast.error("Time slot is already booked.");
-
+          errorMsg = 'This time slot is already taken. Please choose another one.';
         } else {
-          setMessages(prev => [...prev, {
-            text: 'Appointment could not be scheduled. Unknown reason.',
-            sender: 'bot'
-          }]);
-          toast.error("Unknown error occurred.");
+          errorMsg = 'Appointment could not be scheduled. Unknown reason.';
         }
 
+        setMessages(prev => [...prev, { text: errorMsg, sender: 'bot' }]);
+        toast.error(errorMsg);
         setIsSubmitting(false);
         return;
       }
 
-      const book = await axios.post('http://127.0.0.1:5000/book_appointment', {
+    
+      toast.info("Booking appointment and sending confirmation email...");
+
+      const book = await axios.post('http://127.0.0.1:5000/book_and_notify', {
         start: startWithTZ,
         end: endWithTZ,
-        summary: "Doctor Appointment"
+        summary: "Doctor Appointment",
+        to: email
       });
 
-      if (book.data.eventId) {
+      if (book.data.status === "Appointment booked and email sent.") {
         setMessages(prev => [...prev, {
-          text: 'Your appointment has been successfully scheduled!',
+          text: 'Your appointment has been successfully scheduled and a confirmation email was sent!',
           sender: 'bot'
         }]);
-        toast.success("Appointment successfully scheduled!");
+        toast.success("Appointment confirmed and email sent.");
+      } else {
+        setMessages(prev => [...prev, {
+          text: 'Failed to book appointment. Try again later.',
+          sender: 'bot'
+        }]);
+        toast.error("Booking failed.");
       }
 
     } catch (error) {
@@ -144,6 +139,20 @@ function Chat() {
       </div>
 
       <div className="chat-controls">
+        <label htmlFor="email" className="chat-label">Your Email:</label>
+        <small style={{ color: '#555', display: 'block', marginBottom: '8px' }}>
+          Please enter your email address so we can send you a confirmation with the appointment date and time.
+        </small>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="chat-input"
+          placeholder="example@gmail.com"
+          required
+        />
+
         <label htmlFor="start" className="chat-label">Start Date & Time:</label>
         <input
           id="start"
